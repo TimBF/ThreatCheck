@@ -1,0 +1,43 @@
+name: Build ThreatCheck
+ 
+on: 
+  push:
+    branches: [master]
+    tags: ["v[0-9]+.[0-9]+.[0-9]+"]
+
+jobs:
+  build:
+ 
+    runs-on: windows-2019
+ 
+    steps:
+    - uses: actions/checkout@v3
+      name: Checkout Code
+     
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v1.1
+      
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v1.0.6 
+        
+    - name: Restore nuget
+      run: nuget restore ThreatCheck\ThreatCheck.sln
+      
+    - name: Build
+      run: msbuild ThreatCheck\ThreatCheck.sln /t:Rebuild -property:Configuration=Release -p:VisualStudioVersion=15.0 -p:Contained=True 
+    
+    - name : Move Commandline
+      run: move ${{github.workspace}}\ThreatCheck\ThreatCheck\bin\release\CommandLine.dll .
+      
+
+    - name : Move ThreatCheck
+      run: move ${{github.workspace}}\ThreatCheck\ThreatCheck\bin\release\ThreatCheck.exe .      
+      
+    - name: Github Release
+      uses: "marvinpinto/action-automatic-releases@latest"
+      with:
+         repo_token: "${{ secrets.GITHUB_TOKEN }}"
+         prerelease: false
+         files: |
+           ThreatCheck.exe
+           CommandLine.dll
